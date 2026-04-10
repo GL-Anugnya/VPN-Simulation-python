@@ -21,15 +21,6 @@ The aim of this project is to provide a simplified understanding of how VPNs ens
 - hashlib (hashing)
 - threading (multi-client handling)
 
-## Project Structure
-vpn_project/
-│
-├── client.py
-├── server.py
-├── encryption.py
-├── security.py
-└── log.txt
-
 ## How It Works
 1. The client connects to the server using TCP sockets.
 2. The server generates and shares an encryption key.
