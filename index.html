@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure VPN Simulation — Interactive Demo</title>
+    <meta name="description" content="An interactive demonstration of a secure VPN simulation built with Python, featuring AES encryption, SHA-256 hashing, and multi-client support.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Particle canvas background -->
+<canvas id="particleCanvas"></canvas>
+
+<!-- ========== NAVIGATION ========== -->
+<nav id="navbar">
+    <div class="nav-container">
+        <a href="#hero" class="nav-logo">
+            <span class="logo-icon">🔐</span>
+            <span class="logo-text">VPN<span class="accent">Sim</span></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#theory">Theory</a></li>
+            <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#demo" class="nav-cta">Live Demo</a></li>
+        </ul>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section id="hero">
+    <div class="hero-content">
+        <div class="hero-badge">🛡️ Network Security Project</div>
+        <h1>Secure VPN Simulation</h1>
+        <p class="hero-subtitle">An interactive demonstration of encrypted client-server communication using <span class="gradient-text">AES Encryption</span>, <span class="gradient-text">SHA-256 Hashing</span>, and <span class="gradient-text">Multi-Client Threading</span></p>
+        <div class="hero-actions">
+            <a href="#demo" class="btn btn-primary">
+                <span class="btn-icon">▶</span> Launch Demo
+            </a>
+            <a href="#theory" class="btn btn-secondary">
+                <span class="btn-icon">📖</span> Learn the Theory
+            </a>
+        </div>
+        <div class="hero-tech-stack">
+            <span class="tech-pill">Python 3</span>
+            <span class="tech-pill">Socket Programming</span>
+            <span class="tech-pill">Cryptography</span>
+            <span class="tech-pill">Threading</span>
+            <span class="tech-pill">SHA-256</span>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="hero-diagram">
+            <div class="hd-node hd-client">
+                <div class="hd-icon">💻</div>
+                <div class="hd-label">Client</div>
+            </div>
+            <div class="hd-tunnel">
+                <div class="hd-packet packet-1"></div>
+                <div class="hd-packet packet-2"></div>
+                <div class="hd-packet packet-3"></div>
+                <div class="hd-tunnel-label">🔒 Encrypted Tunnel</div>
+            </div>
+            <div class="hd-node hd-server">
+                <div class="hd-icon">🖥️</div>
+                <div class="hd-label">Server</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== OVERVIEW ========== -->
+<section id="overview">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">What Is This?</span>
+            <h2>Project Overview</h2>
+            <p class="section-desc">A simplified VPN system demonstrating how real VPNs ensure secure data transmission using cryptographic techniques.</p>
+        </div>
+
+        <div class="overview-grid">
+            <div class="overview-card" data-aos="fade-up">
+                <div class="oc-icon">🔐</div>
+                <h3>AES Encryption</h3>
+                <p>All messages are encrypted using Fernet (AES-128-CBC) before transmission, ensuring confidentiality.</p>
+            </div>
+            <div class="overview-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="oc-icon">🧬</div>
+                <h3>SHA-256 Hashing</h3>
+                <p>Every message includes a SHA-256 hash to verify data integrity and detect tampering.</p>
+            </div>
+            <div class="overview-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="oc-icon">👤</div>
+                <h3>Authentication</h3>
+                <p>Username/password authentication with encrypted credential exchange prevents unauthorized access.</p>
+            </div>
+            <div class="overview-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="oc-icon">🔑</div>
+                <h3>Key Exchange</h3>
+                <p>The server dynamically generates and shares encryption keys with each connected client.</p>
+            </div>
+            <div class="overview-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="oc-icon">🧵</div>
+                <h3>Multi-Client</h3>
+                <p>Threading allows the server to handle multiple simultaneous client connections.</p>
+            </div>
+            <div class="overview-card" data-aos="fade-up" data-aos-delay="500">
+                <div class="oc-icon">📋</div>
+                <h3>Logging</h3>
+                <p>All verified communications are logged for monitoring and audit purposes.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== ARCHITECTURE ========== -->
+<section id="architecture">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">System Design</span>
+            <h2>Architecture</h2>
+            <p class="section-desc">A modular design separating encryption, security, client, and server responsibilities.</p>
+        </div>
+
+        <div class="arch-layout">
+            <div class="arch-diagram">
+                <div class="arch-layer arch-layer-top">
+                    <div class="arch-module arch-client">
+                        <div class="arch-module-header">
+                            <span class="arch-module-icon">💻</span>
+                            <h4>client.py</h4>
+                        </div>
+                        <ul>
+                            <li>Connects via TCP socket</li>
+                            <li>Receives encryption key</li>
+                            <li>Sends encrypted auth</li>
+                            <li>Sends hashed messages</li>
+                        </ul>
+                    </div>
+                    <div class="arch-module arch-server">
+                        <div class="arch-module-header">
+                            <span class="arch-module-icon">🖥️</span>
+                            <h4>server.py</h4>
+                        </div>
+                        <ul>
+                            <li>Listens on port 5000</li>
+                            <li>Generates & shares key</li>
+                            <li>Validates credentials</li>
+                            <li>Verifies message hash</li>
+                            <li>Multi-threaded handling</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="arch-connectors">
+                    <div class="arch-arrow arch-arrow-left">↓ imports</div>
+                    <div class="arch-arrow arch-arrow-right">↓ imports</div>
+                </div>
+                <div class="arch-layer arch-layer-bottom">
+                    <div class="arch-module arch-encryption">
+                        <div class="arch-module-header">
+                            <span class="arch-module-icon">🔐</span>
+                            <h4>encryption.py</h4>
+                        </div>
+                        <ul>
+                            <li><code>generate_key()</code></li>
+                            <li><code>get_cipher(key)</code></li>
+                            <li><code>encrypt_message()</code></li>
+                            <li><code>decrypt_message()</code></li>
+                        </ul>
+                    </div>
+                    <div class="arch-module arch-security">
+                        <div class="arch-module-header">
+                            <span class="arch-module-icon">🛡️</span>
+                            <h4>security.py</h4>
+                        </div>
+                        <ul>
+                            <li><code>generate_hash(msg)</code></li>
+                            <li><code>verify_hash(msg, hash)</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== THEORY ========== -->
+<section id="theory">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">Concepts</span>
+            <h2>Theory &amp; Security Principles</h2>
+            <p class="section-desc">The fundamental cryptographic concepts powering this VPN simulation.</p>
+        </div>
+
+        <!-- CIA Triad -->
+        <div class="theory-cia">
+            <h3 class="cia-title">The CIA Triad</h3>
+            <p class="cia-subtitle">Three pillars of information security implemented in this project</p>
+            <div class="cia-grid">
+                <div class="cia-card cia-c">
+                    <div class="cia-letter">C</div>
+                    <h4>Confidentiality</h4>
+                    <p>Data is accessible only to authorized parties. Achieved through <strong>AES-based Fernet encryption</strong> — even if an attacker intercepts the data, they cannot read it without the key.</p>
+                    <div class="cia-impl">
+                        <span class="cia-impl-label">Implementation</span>
+                        <code>Fernet.encrypt(message)</code>
+                    </div>
+                </div>
+                <div class="cia-card cia-i">
+                    <div class="cia-letter">I</div>
+                    <h4>Integrity</h4>
+                    <p>Data has not been altered in transit. Achieved through <strong>SHA-256 hashing</strong> — the server recalculates the hash and compares it to detect any tampering.</p>
+                    <div class="cia-impl">
+                        <span class="cia-impl-label">Implementation</span>
+                        <code>hashlib.sha256(msg).hexdigest()</code>
+                    </div>
+                </div>
+                <div class="cia-card cia-a">
+                    <div class="cia-letter">A</div>
+                    <h4>Availability</h4>
+                    <p>The system remains accessible to authorized users. Achieved through <strong>multi-threaded server</strong> — multiple clients can connect and communicate simultaneously.</p>
+                    <div class="cia-impl">
+                        <span class="cia-impl-label">Implementation</span>
+                        <code>threading.Thread(target=handle_client)</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed theory cards -->
+        <div class="theory-details">
+            <div class="theory-card">
+                <div class="tc-header">
+                    <div class="tc-number">01</div>
+                    <h3>What is a VPN?</h3>
+                </div>
+                <div class="tc-body">
+                    <p>A <strong>Virtual Private Network (VPN)</strong> creates a secure, encrypted connection over a less secure network (like the Internet). It acts as a private tunnel between your device and a server, ensuring that data flowing through it cannot be read or tampered with by third parties.</p>
+                    <div class="tc-visual">
+                        <div class="tc-v-item tc-v-user">👤 User</div>
+                        <div class="tc-v-arrow">→</div>
+                        <div class="tc-v-item tc-v-tunnel">🔒 Encrypted Tunnel</div>
+                        <div class="tc-v-arrow">→</div>
+                        <div class="tc-v-item tc-v-server">🖥️ Server</div>
+                    </div>
+                    <p>In this project, we simulate a VPN using <strong>TCP sockets</strong> on localhost. The client connects to the server, establishes an encrypted channel, authenticates, and then exchanges encrypted messages.</p>
+                </div>
+            </div>
+
+            <div class="theory-card">
+                <div class="tc-header">
+                    <div class="tc-number">02</div>
+                    <h3>AES Encryption (Fernet)</h3>
+                </div>
+                <div class="tc-body">
+                    <p><strong>AES (Advanced Encryption Standard)</strong> is a symmetric-key encryption algorithm widely used worldwide. Fernet is a high-level implementation that uses <strong>AES-128-CBC</strong> mode with PKCS7 padding and HMAC-SHA256 for authentication.</p>
+                    <div class="tc-code-block">
+                        <div class="tc-code-header">How Fernet Works</div>
+                        <pre><code>Key Generation:  Fernet.generate_key()  →  Base64-encoded 32-byte key
+                            
+Encryption:      plaintext → PKCS7 pad → AES-128-CBC encrypt → HMAC-SHA256 sign → Base64 encode
+
+Decryption:      Base64 decode → HMAC verify → AES-128-CBC decrypt → PKCS7 unpad → plaintext</code></pre>
+                    </div>
+                    <p>The same key is used for both encryption and decryption (symmetric encryption). In this project, the server generates the key and shares it with the client upon connection.</p>
+                </div>
+            </div>
+
+            <div class="theory-card">
+                <div class="tc-header">
+                    <div class="tc-number">03</div>
+                    <h3>SHA-256 Hashing</h3>
+                </div>
+                <div class="tc-body">
+                    <p><strong>SHA-256 (Secure Hash Algorithm 256-bit)</strong> produces a fixed 256-bit (64-character hex) hash from any input. Key properties:</p>
+                    <ul class="tc-list">
+                        <li><strong>Deterministic:</strong> Same input always produces the same hash</li>
+                        <li><strong>Irreversible:</strong> Cannot derive the original message from the hash</li>
+                        <li><strong>Avalanche Effect:</strong> A tiny change in input drastically changes the hash</li>
+                        <li><strong>Collision Resistant:</strong> Near-impossible to find two inputs with the same hash</li>
+                    </ul>
+                    <div class="tc-code-block">
+                        <div class="tc-code-header">Hash Verification Flow</div>
+                        <pre><code>Client: hash = SHA-256("Hello")  →  "185f8db32271..."
+        sends: encrypt("Hello||185f8db32271...")
+
+Server: decrypt → split("Hello", "185f8db32271...")
+        recalculate = SHA-256("Hello") → "185f8db32271..."
+        compare: recalculate == received_hash ? ✅ Valid : ❌ Tampered</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="theory-card">
+                <div class="tc-header">
+                    <div class="tc-number">04</div>
+                    <h3>Socket Programming</h3>
+                </div>
+                <div class="tc-body">
+                    <p><strong>TCP Sockets</strong> provide reliable, ordered, and error-checked communication between applications over a network. This project uses Python's <code>socket</code> module with <code>AF_INET</code> (IPv4) and <code>SOCK_STREAM</code> (TCP).</p>
+                    <div class="tc-code-block">
+                        <div class="tc-code-header">Socket Lifecycle</div>
+                        <pre><code>Server:  socket() → bind(HOST, PORT) → listen() → accept() → recv/send → close()
+Client:  socket() → connect(HOST, PORT) → recv/send → close()</code></pre>
+                    </div>
+                    <p>The server runs at <code>127.0.0.1:5000</code> (localhost) and can accept up to 5 queued connections. Each accepted connection is handled in a separate thread.</p>
+                </div>
+            </div>
+
+            <div class="theory-card">
+                <div class="tc-header">
+                    <div class="tc-number">05</div>
+                    <h3>Multi-Threading</h3>
+                </div>
+                <div class="tc-body">
+                    <p><strong>Threading</strong> allows the server to handle multiple clients concurrently. Each client connection spawns a new thread that runs the <code>handle_client()</code> function independently.</p>
+                    <div class="tc-code-block">
+                        <div class="tc-code-header">Threading Model</div>
+                        <pre><code>Main Thread: while True → accept() → spawn new thread
+Thread 1:    handle_client(client_1)  ← runs independently
+Thread 2:    handle_client(client_2)  ← runs independently
+Thread N:    handle_client(client_N)  ← runs independently</code></pre>
+                    </div>
+                    <p>This ensures that one slow client does not block other clients from communicating with the server.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== WORKFLOW ========== -->
+<section id="workflow">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">Step by Step</span>
+            <h2>Communication Workflow</h2>
+            <p class="section-desc">Follow the complete journey of a message from client to server.</p>
+        </div>
+
+        <div class="workflow-timeline">
+            <div class="wf-step" data-step="1">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">1</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Connection</div>
+                    <h3>TCP Connection Established</h3>
+                    <p>The client creates a TCP socket and connects to the server at <code>127.0.0.1:5000</code>. The server accepts the connection and spawns a new thread for this client.</p>
+                    <div class="wf-visual">
+                        <span class="wf-v-box wf-v-client">Client</span>
+                        <span class="wf-v-line">──── TCP SYN/ACK ────▶</span>
+                        <span class="wf-v-box wf-v-server">Server</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-step" data-step="2">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">2</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Key Exchange</div>
+                    <h3>Encryption Key Shared</h3>
+                    <p>The server generates a Fernet encryption key using <code>Fernet.generate_key()</code> and sends it to the client. Both sides now share a symmetric key for encryption/decryption.</p>
+                    <div class="wf-visual">
+                        <span class="wf-v-box wf-v-server">Server</span>
+                        <span class="wf-v-line">──── 🔑 Key ────▶</span>
+                        <span class="wf-v-box wf-v-client">Client</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-step" data-step="3">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">3</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Authentication</div>
+                    <h3>User Login Verified</h3>
+                    <p>The client encrypts <code>username:password</code> using the shared key and sends it. The server decrypts and checks against its valid user database (<code>admin:1234</code> or <code>user:pass</code>).</p>
+                    <div class="wf-visual">
+                        <span class="wf-v-box wf-v-client">Client</span>
+                        <span class="wf-v-line">── 🔒 encrypt("admin:1234") ──▶</span>
+                        <span class="wf-v-box wf-v-server">Server</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-step" data-step="4">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">4</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Message Prep</div>
+                    <h3>Hash &amp; Encrypt Message</h3>
+                    <p>The client computes SHA-256 hash of the message, appends it as <code>message||hash</code>, then encrypts the entire combined string using Fernet. This ensures both confidentiality and integrity.</p>
+                    <div class="wf-code-visual">
+                        <div class="wf-cv-step"><span>1.</span> message = "Hello"</div>
+                        <div class="wf-cv-step"><span>2.</span> hash = SHA256("Hello") → "185f8db..."</div>
+                        <div class="wf-cv-step"><span>3.</span> combined = "Hello||185f8db..."</div>
+                        <div class="wf-cv-step"><span>4.</span> encrypted = Fernet.encrypt(combined)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-step" data-step="5">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">5</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Transmission</div>
+                    <h3>Encrypted Data Sent</h3>
+                    <p>The encrypted payload is transmitted over the TCP socket. Even if intercepted, the data appears as unintelligible ciphertext without the encryption key.</p>
+                    <div class="wf-visual">
+                        <span class="wf-v-box wf-v-client">Client</span>
+                        <span class="wf-v-line">── 🔒 gAAAAABp4G47... ──▶</span>
+                        <span class="wf-v-box wf-v-server">Server</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wf-step" data-step="6">
+                <div class="wf-step-marker">
+                    <div class="wf-step-num">6</div>
+                </div>
+                <div class="wf-step-content">
+                    <div class="wf-step-badge">Verification</div>
+                    <h3>Decrypt &amp; Verify Integrity</h3>
+                    <p>The server decrypts the data, splits <code>message||hash</code>, recalculates SHA-256 of the message, and compares. If hashes match → message is valid. If not → data has been tampered with!</p>
+                    <div class="wf-code-visual">
+                        <div class="wf-cv-step"><span>1.</span> decrypted = Fernet.decrypt(data) → "Hello||185f8db..."</div>
+                        <div class="wf-cv-step"><span>2.</span> message, received_hash = split("||")</div>
+                        <div class="wf-cv-step"><span>3.</span> calculated_hash = SHA256("Hello")</div>
+                        <div class="wf-cv-step"><span>4.</span> calculated_hash == received_hash ? ✅ : ❌</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== LIVE DEMO ========== -->
+<section id="demo">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-tag">Try It Out</span>
+            <h2>Interactive VPN Demo</h2>
+            <p class="section-desc">Simulate the full VPN communication flow — watch encryption, hashing, and verification happen in real time.</p>
+        </div>
+
+        <div class="demo-layout">
+            <!-- Client Panel -->
+            <div class="demo-panel demo-client" id="demoClient">
+                <div class="dp-header">
+                    <div class="dp-dot-group"><span class="dp-dot red"></span><span class="dp-dot yellow"></span><span class="dp-dot green"></span></div>
+                    <span class="dp-title">💻 Client Terminal</span>
+                    <span class="dp-status" id="clientStatus">Disconnected</span>
+                </div>
+                <div class="dp-body">
+                    <div class="dp-terminal" id="clientTerminal">
+                        <div class="term-line"><span class="term-prompt">$</span> Waiting to connect...</div>
+                    </div>
+
+                    <!-- Auth Form -->
+                    <div class="dp-form" id="authForm">
+                        <div class="dp-input-group">
+                            <label for="demoUsername">Username</label>
+                            <input type="text" id="demoUsername" value="admin" placeholder="Enter username">
+                        </div>
+                        <div class="dp-input-group">
+                            <label for="demoPassword">Password</label>
+                            <input type="password" id="demoPassword" value="1234" placeholder="Enter password">
+                        </div>
+                        <button class="btn btn-primary btn-full" id="btnConnect">
+                            <span class="btn-icon">🔌</span> Connect &amp; Authenticate
+                        </button>
+                    </div>
+
+                    <!-- Message Form (hidden initially) -->
+                    <div class="dp-form dp-hidden" id="msgForm">
+                        <div class="dp-input-group">
+                            <label for="demoMessage">Message</label>
+                            <input type="text" id="demoMessage" placeholder="Type a message to send..." value="Hello from VPN!">
+                        </div>
+                        <div class="dp-btn-row">
+                            <button class="btn btn-primary btn-flex" id="btnSend">
+                                <span class="btn-icon">📤</span> Send Secure
+                            </button>
+                            <button class="btn btn-danger btn-flex" id="btnTamper">
+                                <span class="btn-icon">💀</span> Send Tampered
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Visualization -->
+            <div class="demo-network" id="demoNetwork">
+                <div class="dn-label">Network</div>
+                <div class="dn-pipe">
+                    <div class="dn-packet" id="networkPacket"></div>
+                </div>
+                <div class="dn-intercepted" id="interceptedData">
+                    <div class="dn-int-header">🕵️ Intercepted Data</div>
+                    <div class="dn-int-body" id="interceptedBody">No data in transit</div>
+                </div>
+            </div>
+
+            <!-- Server Panel -->
+            <div class="demo-panel demo-server" id="demoServer">
+                <div class="dp-header">
+                    <div class="dp-dot-group"><span class="dp-dot red"></span><span class="dp-dot yellow"></span><span class="dp-dot green"></span></div>
+                    <span class="dp-title">🖥️ Server Terminal</span>
+                    <span class="dp-status" id="serverStatus">Listening</span>
+                </div>
+                <div class="dp-body">
+                    <div class="dp-terminal" id="serverTerminal">
+                        <div class="term-line"><span class="term-prompt">$</span> VPN Server running on 127.0.0.1:5000</div>
+                        <div class="term-line"><span class="term-prompt">$</span> Waiting for connections...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization panel showing detailed step breakdown -->
+        <div class="demo-viz" id="demoViz">
+            <h3>🔬 Process Visualization</h3>
+            <div class="viz-steps" id="vizSteps">
+                <div class="viz-placeholder">Run the demo above to see the step-by-step encryption, hashing, and verification process visualized here.</div>
+            </div>
+        </div>
+
+        <!-- Reset -->
+        <div class="demo-reset">
+            <button class="btn btn-secondary" id="btnReset">
+                <span class="btn-icon">🔄</span> Reset Demo
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer id="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="logo-icon">🔐</span>
+                <span class="logo-text">VPN<span class="accent">Sim</span></span>
+            </div>
+            <p class="footer-desc">Secure VPN Simulation — A Network Security Project demonstrating cryptographic communication principles.</p>
+            <div class="footer-tech">
+                <span>Built with</span>
+                <span class="tech-pill small">Python</span>
+                <span class="tech-pill small">Sockets</span>
+                <span class="tech-pill small">Fernet/AES</span>
+                <span class="tech-pill small">SHA-256</span>
+                <span class="tech-pill small">Threading</span>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Secure VPN Simulation. Network Security Project.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
