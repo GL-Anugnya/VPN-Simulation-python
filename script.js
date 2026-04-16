@@ -1,5 +1,5 @@
 /* ============================================
-   SECURE VPN SIMULATION — INTERACTIVE LOGIC
+   SECURE VPN SIMULATION — INTERACTIVE TERMINAL
    ============================================ */
 
 // ========== PARTICLES BACKGROUND ==========
@@ -13,14 +13,11 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-
     window.addEventListener('resize', resize);
     resize();
 
     class Particle {
-        constructor() {
-            this.reset();
-        }
+        constructor() { this.reset(); }
         reset() {
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
@@ -32,21 +29,17 @@
         update() {
             this.x += this.speedX;
             this.y += this.speedY;
-            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
-                this.reset();
-            }
+            if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
         }
         draw() {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(79, 140, 255, ${this.opacity})`;
+            ctx.fillStyle = `rgba(79,140,255,${this.opacity})`;
             ctx.fill();
         }
     }
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particles.push(new Particle());
-    }
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
 
     function connectParticles() {
         for (let a = 0; a < particles.length; a++) {
@@ -56,7 +49,7 @@
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 150) {
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(79, 140, 255, ${0.05 * (1 - dist / 150)})`;
+                    ctx.strokeStyle = `rgba(79,140,255,${0.05 * (1 - dist / 150)})`;
                     ctx.lineWidth = 0.5;
                     ctx.moveTo(particles[a].x, particles[a].y);
                     ctx.lineTo(particles[b].x, particles[b].y);
@@ -72,33 +65,22 @@
         connectParticles();
         requestAnimationFrame(animate);
     }
-
     animate();
 })();
 
 
-// ========== NAVBAR SCROLL EFFECT ==========
+// ========== NAVBAR ==========
 (function initNavbar() {
     const navbar = document.getElementById('navbar');
     const navToggle = document.getElementById('navToggle');
     const navLinks = document.querySelector('.nav-links');
-
-    window.addEventListener('scroll', () => {
-        navbar.classList.toggle('scrolled', window.scrollY > 40);
-    });
-
-    navToggle.addEventListener('click', () => {
-        navLinks.classList.toggle('open');
-    });
-
-    // Close mobile nav on link click
-    navLinks.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => navLinks.classList.remove('open'));
-    });
+    window.addEventListener('scroll', () => navbar.classList.toggle('scrolled', window.scrollY > 40));
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(l => l.addEventListener('click', () => navLinks.classList.remove('open')));
 })();
 
 
-// ========== SCROLL REVEAL ANIMATION ==========
+// ========== SCROLL REVEAL ==========
 (function initScrollReveal() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -118,278 +100,530 @@
 })();
 
 
-// ========== INTERACTIVE VPN DEMO ==========
+// ========== INTERACTIVE TERMINAL DEMO ==========
 (function initDemo() {
 
-    // --- HELPERS ---
-    function simulateFernetKey() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
-        let key = '';
-        for (let i = 0; i < 44; i++) key += chars[Math.floor(Math.random() * chars.length)];
-        return key;
-    }
+    // ── State ──────────────────────────────────────────────────
+    let sessionId = '';
+    let currentKey = '';
+    let currentUsername = '';
+    let isConnected = false;
+    let isAuthenticated = false;
+    let cmdHistory = [];
+    let historyIndex = -1;
+    let busy = false;
 
-    function simulateEncrypt(text) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
-        let enc = 'gAAAAAB';
-        for (let i = 0; i < 60 + Math.floor(Math.random() * 40); i++) enc += chars[Math.floor(Math.random() * chars.length)];
-        return enc;
-    }
-
-    function simulateSHA256(message) {
-        // Simple hash simulation (not real SHA256, but deterministic-looking)
-        let hash = '';
-        const hexChars = '0123456789abcdef';
-        let seed = 0;
-        for (let i = 0; i < message.length; i++) seed += message.charCodeAt(i) * (i + 1);
-        for (let i = 0; i < 64; i++) {
-            seed = (seed * 31 + i * 7 + 13) & 0xFFFFFFFF;
-            hash += hexChars[Math.abs(seed) % 16];
-        }
-        return hash;
-    }
-
-    function fakeSHA256() {
-        return '0'.repeat(64);
-    }
-
-    // --- DOM REFS ---
+    // ── DOM ────────────────────────────────────────────────────
     const clientTerminal = document.getElementById('clientTerminal');
     const serverTerminal = document.getElementById('serverTerminal');
-    const clientStatus = document.getElementById('clientStatus');
-    const serverStatus = document.getElementById('serverStatus');
-    const authForm = document.getElementById('authForm');
-    const msgForm = document.getElementById('msgForm');
-    const btnConnect = document.getElementById('btnConnect');
-    const btnSend = document.getElementById('btnSend');
-    const btnTamper = document.getElementById('btnTamper');
-    const btnReset = document.getElementById('btnReset');
-    const networkPacket = document.getElementById('networkPacket');
+    const clientStatus   = document.getElementById('clientStatus');
+    const serverStatus   = document.getElementById('serverStatus');
+    const networkPacket  = document.getElementById('networkPacket');
     const interceptedBody = document.getElementById('interceptedBody');
-    const vizSteps = document.getElementById('vizSteps');
+    const vizSteps       = document.getElementById('vizSteps');
+    const termInput      = document.getElementById('termInput');
+    const termEnterBtn   = document.getElementById('termEnterBtn');
 
-    const VALID_USERS = { 'admin': '1234', 'user': 'pass' };
-    let currentKey = '';
-    let isConnected = false;
-
-    // --- TERMINAL HELPERS ---
-    function addLine(terminal, html, className) {
-        const line = document.createElement('div');
-        line.className = 'term-line';
-        if (className) line.classList.add(className);
-        line.innerHTML = html;
-        terminal.appendChild(line);
-        terminal.scrollTop = terminal.scrollHeight;
+    // ── API Helper ─────────────────────────────────────────────
+    async function api(endpoint, body = null) {
+        const opts = {
+            method: body === null ? 'GET' : 'POST',
+            headers: body ? { 'Content-Type': 'application/json' } : {}
+        };
+        if (body) opts.body = JSON.stringify(body);
+        const r = await fetch(`/api/${endpoint}`, opts);
+        if (!r.ok) {
+            const e = await r.json().catch(() => ({ error: 'Server error' }));
+            throw new Error(e.error || 'Request failed');
+        }
+        return r.json();
     }
 
-    function addClientLine(html, cls) { addLine(clientTerminal, `<span class="term-prompt">$</span> ${html}`, cls); }
-    function addServerLine(html, cls) { addLine(serverTerminal, `<span class="term-prompt">$</span> ${html}`, cls); }
-
-    function clearViz() {
-        vizSteps.innerHTML = '';
+    // ── Terminal output helpers ────────────────────────────────
+    function addLine(term, html, extraClass) {
+        const el = document.createElement('div');
+        el.className = 'term-line' + (extraClass ? ' ' + extraClass : '');
+        el.innerHTML = html;
+        term.appendChild(el);
+        term.scrollTop = term.scrollHeight;
     }
 
-    function addVizStep(icon, color, title, detail, delay) {
-        const step = document.createElement('div');
-        step.className = 'viz-step';
-        step.style.animationDelay = `${delay}ms`;
-        step.innerHTML = `
+    function cLine(html, cls) { addLine(clientTerminal, html, cls); }
+    function sLine(html, cls) { addLine(serverTerminal, html, cls); }
+
+    const C = {
+        info:    t => `<span class="term-info">${t}</span>`,
+        success: t => `<span class="term-success">${t}</span>`,
+        error:   t => `<span class="term-error">${t}</span>`,
+        warn:    t => `<span class="term-warn">${t}</span>`,
+        dim:     t => `<span class="term-dim">${t}</span>`,
+        accent:  t => `<span class="term-accent">${t}</span>`,
+        purple:  t => `<span class="term-purple">${t}</span>`,
+        prompt:  t => `<span class="term-prompt">$</span> ${t}`,
+        echo:    t => `<span class="term-cmd-echo">▸ ${t}</span>`
+    };
+
+    function sep(term) { addLine(term, '<span class="term-dim">──────────────────────────────────────────</span>'); }
+
+    // ── Viz helpers ────────────────────────────────────────────
+    function clearViz() { vizSteps.innerHTML = ''; }
+
+    function viz(icon, color, title, detail, delay = 0) {
+        const el = document.createElement('div');
+        el.className = 'viz-step';
+        el.style.animationDelay = `${delay}ms`;
+        el.innerHTML = `
             <div class="viz-step-icon ${color}">${icon}</div>
             <div class="viz-step-content">
                 <div class="viz-step-title">${title}</div>
                 <div class="viz-step-detail">${detail}</div>
-            </div>
-        `;
-        vizSteps.appendChild(step);
+            </div>`;
+        vizSteps.appendChild(el);
     }
 
-    function animatePacket(direction) {
+    function animatePacket(dir) {
         networkPacket.className = 'dn-packet';
-        void networkPacket.offsetWidth; // reflow
-        networkPacket.classList.add(direction === 'down' ? 'animate-down' : 'animate-up');
+        void networkPacket.offsetWidth;
+        networkPacket.classList.add(dir === 'down' ? 'animate-down' : 'animate-up');
     }
 
-    async function sleep(ms) {
-        return new Promise(r => setTimeout(r, ms));
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function setStatus(client, server, connected) {
+        clientStatus.textContent = client;
+        serverStatus.textContent = server;
+        clientStatus.classList.toggle('connected', connected);
+        serverStatus.classList.toggle('connected', connected);
     }
 
-    // --- CONNECT & AUTH ---
-    btnConnect.addEventListener('click', async () => {
-        const username = document.getElementById('demoUsername').value.trim();
-        const password = document.getElementById('demoPassword').value.trim();
+    // ── COMMAND HANDLER ────────────────────────────────────────
+    const COMMANDS = {
+        // ── help ────────────────────────────────────────────────
+        help: async () => {
+            cLine('');
+            cLine(C.accent('  Available Commands:'));
+            cLine('');
+            const cmds = [
+                ['connect',              'Establish TCP connection + key exchange'],
+                ['login &lt;user&gt; &lt;pass&gt;',   'Authenticate with username and password'],
+                ['send &lt;message&gt;',       'Send encrypted + SHA-256 hashed message'],
+                ['tamper &lt;message&gt;',     'Send message with FAKE hash (tamper demo)'],
+                ['status',               'Show current session info'],
+                ['log',                  'Read the server log.txt file'],
+                ['clear',                'Clear this terminal'],
+                ['disconnect',           'Disconnect from server'],
+                ['help',                 'Show this help'],
+            ];
+            cmds.forEach(([cmd, desc]) => {
+                cLine(`  ${C.accent(cmd.padEnd(22))} ${C.dim(desc)}`);
+            });
+            cLine('');
+        },
 
-        if (!username || !password) return;
+        // ── connect ─────────────────────────────────────────────
+        connect: async () => {
+            if (isConnected) {
+                cLine(C.prompt(C.warn('Already connected. Type disconnect first.')));
+                return;
+            }
+            clearViz();
+            cLine('');
+            cLine(C.prompt(C.info('Initiating TCP connection to 127.0.0.1:5000...')));
+            await sleep(400);
+            sLine('');
+            sLine(C.success('[+] Incoming connection from 127.0.0.1'));
+            viz('🔌', 'blue', 'Step 1 — TCP Connection Established',
+                'Client created a TCP socket and connected to server at <strong>127.0.0.1:5000</strong>.<br>Server accepted and spawned a new thread for this client.', 0);
 
-        btnConnect.disabled = true;
-        clearViz();
+            // Real API call → Fernet.generate_key()
+            await sleep(500);
+            let keyData;
+            try { keyData = await api('generate-key', {}); }
+            catch (e) {
+                cLine(C.prompt(C.error(`[ERROR] Cannot reach backend: ${e.message}`)));
+                cLine(C.prompt(C.error('Make sure python app.py is running!')));
+                return;
+            }
 
-        // Step 1: TCP Connection
-        addClientLine('<span class="term-info">Connecting to 127.0.0.1:5000...</span>');
-        await sleep(600);
-        addServerLine('<span class="term-success">[+] Connection from 127.0.0.1</span>');
-        addVizStep('🔌', 'blue', 'TCP Connection Established', 'Client connected to server at <strong>127.0.0.1:5000</strong> via TCP socket.', 0);
+            currentKey = keyData.key;
+            sessionId  = keyData.session_id;
 
-        // Step 2: Key Exchange
-        await sleep(500);
-        currentKey = simulateFernetKey();
-        addServerLine(`<span class="term-info">[KEY] Generated: </span><span class="term-dim">${currentKey}</span>`);
-        animatePacket('up');
-        await sleep(800);
-        addClientLine(`<span class="term-info">[KEY] Received: </span><span class="term-dim">${currentKey.substring(0, 20)}...</span>`);
-        addVizStep('🔑', 'purple', 'Encryption Key Exchange', `Server generated Fernet key and sent to client.<br><strong>Key:</strong> ${currentKey.substring(0, 30)}...`, 100);
-
-        // Step 3: Authentication
-        await sleep(500);
-        const authPlain = `${username}:${password}`;
-        const authEncrypted = simulateEncrypt(authPlain);
-        addClientLine(`<span class="term-accent">[AUTH] Plaintext: </span><span class="term-dim">${authPlain}</span>`);
-        addClientLine(`<span class="term-accent">[AUTH] Encrypted: </span><span class="term-dim">${authEncrypted.substring(0, 40)}...</span>`);
-        addVizStep('🔒', 'cyan', 'Credentials Encrypted', `<strong>Plaintext:</strong> ${authPlain}<br><strong>Ciphertext:</strong> ${authEncrypted.substring(0, 50)}...`, 200);
-
-        animatePacket('down');
-        interceptedBody.textContent = authEncrypted;
-        await sleep(800);
-
-        addServerLine(`<span class="term-accent">[AUTH] Received encrypted credentials</span>`);
-        addServerLine(`<span class="term-accent">[AUTH] Decrypted: </span><span class="term-dim">${authPlain}</span>`);
-
-        // Check auth
-        await sleep(400);
-        if (VALID_USERS[username] && VALID_USERS[username] === password) {
-            addServerLine(`<span class="term-success">[AUTH SUCCESS] ${username} authenticated ✅</span>`);
+            sLine(C.info(`[KEY] Fernet.generate_key() called`));
+            sLine(C.dim(`[KEY] Generated: ${currentKey}`));
             animatePacket('up');
-            await sleep(600);
-            addClientLine(`<span class="term-success">[AUTH] Authentication Successful! ✅</span>`);
-            addVizStep('✅', 'green', 'Authentication Successful', `User <strong>${username}</strong> authenticated successfully. Server validated credentials against user database.`, 300);
+            await sleep(700);
+            cLine(C.prompt(C.info(`[KEY] Received from server: ${currentKey.substring(0, 28)}...`)));
+            viz('🔑', 'purple', 'Step 2 — Real Fernet Key Exchange (encryption.py)',
+                `Server called <strong>Fernet.generate_key()</strong> and sent the key to client.<br><strong>Full Key:</strong> ${currentKey}`, 150);
 
-            clientStatus.textContent = 'Connected';
-            clientStatus.classList.add('connected');
-            serverStatus.textContent = 'Active Client';
-            serverStatus.classList.add('connected');
             isConnected = true;
+            setStatus('Connected', 'Active', true);
+            sep(clientTerminal);
+            cLine(C.success('✅ Connection established! Key exchange complete.'));
+            cLine(C.dim('    Now use: login &lt;username&gt; &lt;password&gt;'));
+            cLine('');
+        },
 
-            authForm.classList.add('dp-hidden');
-            msgForm.classList.remove('dp-hidden');
-        } else {
-            addServerLine(`<span class="term-error">[AUTH FAILED] Invalid credentials for "${username}" ❌</span>`);
-            animatePacket('up');
+        // ── login ───────────────────────────────────────────────
+        login: async (args) => {
+            if (!isConnected) {
+                cLine(C.prompt(C.warn('Not connected. Run connect first.')));
+                return;
+            }
+            if (isAuthenticated) {
+                cLine(C.prompt(C.warn(`Already authenticated as ${currentUsername}. Disconnect to re-login.`)));
+                return;
+            }
+            const [username, password] = args;
+            if (!username || !password) {
+                cLine(C.prompt(C.error('Usage: login &lt;username&gt; &lt;password&gt;')));
+                return;
+            }
+
+            clearViz();
+            cLine('');
+            cLine(C.prompt(C.info(`Authenticating as "${username}"...`)));
+            await sleep(300);
+
+            let r;
+            try { r = await api('authenticate', { session_id: sessionId, username, password }); }
+            catch (e) {
+                cLine(C.prompt(C.error(`[ERROR] ${e.message}`)));
+                return;
+            }
+
+            // Client encrypts credentials
+            cLine(C.prompt(C.accent(`[AUTH] Plaintext: ${r.auth_plaintext}`)));
+            cLine(C.prompt(C.accent(`[AUTH] Encrypted: ${r.auth_encrypted.substring(0, 55)}...`)));
+            viz('🔒', 'cyan', 'Step 3a — Real Fernet Encryption (encryption.py)',
+                `Client encrypted credentials using Fernet key.<br><strong>Plaintext:</strong> ${r.auth_plaintext}<br><strong>Ciphertext:</strong> ${r.auth_encrypted.substring(0, 80)}...`, 0);
+
+            animatePacket('down');
+            interceptedBody.textContent = r.auth_encrypted;
             await sleep(600);
-            addClientLine(`<span class="term-error">[AUTH] Authentication Failed! ❌</span>`);
-            addVizStep('❌', 'red', 'Authentication Failed', `Invalid credentials for user <strong>${username}</strong>. Connection closed by server.`, 300);
-            btnConnect.disabled = false;
+
+            // Server decrypts
+            sLine(C.accent('[AUTH] Encrypted credentials received'));
+            sLine(C.accent(`[AUTH] Fernet.decrypt() → "${r.auth_decrypted}"`));
+            viz('🔓', 'purple', 'Step 3b — Real Fernet Decryption (encryption.py)',
+                `Server decrypted the ciphertext back to plaintext.<br><strong>Result:</strong> ${r.auth_decrypted}`, 100);
+
+            await sleep(400);
+
+            if (r.success) {
+                sLine(C.success(`[AUTH SUCCESS] ${r.username} authenticated ✅`));
+                sLine(C.dim(`[AUTH] Server response (encrypted): ${r.response_encrypted.substring(0, 40)}...`));
+                animatePacket('up');
+                await sleep(500);
+                cLine(C.prompt(C.success(`[AUTH] Server response: ${r.response_decrypted} ✅`)));
+                viz('✅', 'green', 'Step 3c — Authentication SUCCESS (server.py)',
+                    `Server checked <strong>${r.auth_decrypted}</strong> against VALID_USERS database.<br>Match found → sent encrypted <strong>AUTH_SUCCESS</strong> back to client.`, 200);
+
+                isAuthenticated = true;
+                currentUsername = r.username;
+                setStatus(`Authed: ${r.username}`, `Client: ${r.username}`, true);
+                sep(clientTerminal);
+                cLine(C.success(`✅ Logged in as ${r.username}. Session active.`));
+                cLine(C.dim('    Now use: send &lt;your message&gt;'));
+            } else {
+                sLine(C.error(`[AUTH FAILED] "${username}" not in VALID_USERS ❌`));
+                animatePacket('up');
+                await sleep(500);
+                cLine(C.prompt(C.error(`[AUTH] Server response: ${r.response_decrypted} ❌`)));
+                viz('❌', 'red', 'Step 3c — Authentication FAILED (server.py)',
+                    `Server checked <strong>${r.auth_decrypted}</strong> against VALID_USERS — no match found.<br>Server sent encrypted <strong>AUTH_FAILED</strong> and closed the session.`, 200);
+                // session was killed server-side, reset local too
+                isConnected = false;
+                sessionId = '';
+                currentKey = '';
+                setStatus('Disconnected', 'Listening', false);
+            }
+            cLine('');
+        },
+
+        // ── send ────────────────────────────────────────────────
+        send: async (args) => {
+            if (!isAuthenticated) {
+                cLine(C.prompt(C.warn('Not authenticated. Run connect then login first.')));
+                return;
+            }
+            const message = args.join(' ');
+            if (!message) { cLine(C.prompt(C.error('Usage: send &lt;message&gt;'))); return; }
+
+            clearViz();
+            await executeMessage(message, false);
+        },
+
+        // ── tamper ──────────────────────────────────────────────
+        tamper: async (args) => {
+            if (!isAuthenticated) {
+                cLine(C.prompt(C.warn('Not authenticated. Run connect then login first.')));
+                return;
+            }
+            const message = args.join(' ');
+            if (!message) { cLine(C.prompt(C.error('Usage: tamper &lt;message&gt;'))); return; }
+
+            clearViz();
+            await executeMessage(message, true);
+        },
+
+        // ── status ──────────────────────────────────────────────
+        status: async () => {
+            cLine('');
+            cLine(C.accent('  Session Status:'));
+            cLine('');
+            cLine(`  Connected:     ${isConnected ? C.success('Yes') : C.error('No')}`);
+            cLine(`  Authenticated: ${isAuthenticated ? C.success(`Yes — ${currentUsername}`) : C.error('No')}`);
+            cLine(`  Session ID:    ${sessionId ? C.dim(sessionId.substring(0, 30) + '...') : C.dim('None')}`);
+            cLine(`  Fernet Key:    ${currentKey ? C.dim(currentKey.substring(0, 30) + '...') : C.dim('None')}`);
+            cLine(`  Server:        ${C.dim('127.0.0.1:5001 (Flask/VPN backend)')}`);
+            cLine('');
+        },
+
+        // ── log ─────────────────────────────────────────────────
+        log: async () => {
+            cLine('');
+            cLine(C.info('  Reading log.txt from server...'));
+            cLine('');
+            try {
+                const data = await api('log');
+                if (data.lines.length === 0) {
+                    cLine(C.dim('  log.txt is empty — no messages logged yet'));
+                } else {
+                    data.lines.forEach((line, i) => {
+                        cLine(`  ${C.dim(`${i + 1}.`)} ${C.success(line)}`);
+                    });
+                }
+            } catch (e) {
+                cLine(C.error(`  [ERROR] Could not read log: ${e.message}`));
+            }
+            cLine('');
+        },
+
+        // ── clear ───────────────────────────────────────────────
+        clear: async () => {
+            clientTerminal.innerHTML = '';
+            clearViz();
+            vizSteps.innerHTML = '<div class="viz-placeholder">Run a command to see the process visualization here.</div>';
+        },
+
+        // ── disconnect ──────────────────────────────────────────
+        disconnect: async () => {
+            if (!isConnected) {
+                cLine(C.prompt(C.warn('Not connected.')));
+                return;
+            }
+            cLine('');
+            cLine(C.prompt(C.warn('Closing connection...')));
+            try { await api('reset', { session_id: sessionId }); } catch (_) {}
+            await sleep(300);
+            sLine(C.warn(`[-] Client ${currentUsername || 'unknown'} disconnected`));
+
+            isConnected = false;
+            isAuthenticated = false;
+            sessionId = '';
+            currentKey = '';
+            currentUsername = '';
+            interceptedBody.textContent = 'No data in transit';
+            networkPacket.className = 'dn-packet';
+            setStatus('Disconnected', 'Listening', false);
+            clearViz();
+            vizSteps.innerHTML = '<div class="viz-placeholder">Run a command to see the process visualization here.</div>';
+
+            sep(clientTerminal);
+            cLine(C.dim('Session closed. Type connect to start a new session.'));
+            cLine('');
         }
-    });
+    };
 
-    // --- SEND MESSAGE ---
-    async function sendMessage(tampered) {
-        if (!isConnected) return;
+    // ── Core message send/tamper logic ─────────────────────────
+    async function executeMessage(message, tampered) {
+        cLine('');
 
-        const message = document.getElementById('demoMessage').value.trim();
-        if (!message) return;
+        let r;
+        try {
+            r = await api('send-message', {
+                session_id: sessionId,
+                message,
+                tampered,
+                username: currentUsername
+            });
+        } catch (e) {
+            cLine(C.prompt(C.error(`[ERROR] ${e.message}`)));
+            return;
+        }
 
-        btnSend.disabled = true;
-        btnTamper.disabled = true;
-        clearViz();
-
-        const hash = tampered ? fakeSHA256() : simulateSHA256(message);
-        const realHash = simulateSHA256(message);
-        const combined = `${message}||${hash}`;
-        const encrypted = simulateEncrypt(combined);
-
-        // Client side
-        addClientLine(`<span class="term-info">[MSG] Plaintext: </span><span class="term-dim">"${message}"</span>`);
-
-        addVizStep('📝', 'blue', 'Original Message', `<strong>Plaintext:</strong> "${message}"`, 0);
-
-        await sleep(400);
+        // Client side output
+        cLine(C.prompt(C.info(`[MSG] Plaintext: "${r.message}"`)));
+        viz('📝', 'blue', 'Original Message', `<strong>Plaintext:</strong> "${r.message}"`, 0);
+        await sleep(350);
 
         if (tampered) {
-            addClientLine(`<span class="term-warn">[HASH] ⚠️ Using FAKE hash: </span><span class="term-dim">${hash.substring(0, 30)}...</span>`);
-            addVizStep('💀', 'red', 'Tampered Hash Generated', `<strong>Fake hash used instead of real SHA-256!</strong><br><strong>Fake:</strong> ${hash.substring(0, 40)}...<br><strong>Real would be:</strong> ${realHash.substring(0, 40)}...`, 100);
+            cLine(C.prompt(C.warn(`[HASH] ⚠️ FAKE hash injected: ${r.sent_hash.substring(0, 30)}...`)));
+            viz('💀', 'red', 'Tampered Hash Injected (Attack Simulation)',
+                `Real hash was replaced with all zeros (simulating attacker tampering).<br><strong>Fake Hash:</strong> ${r.sent_hash}<br><strong>Real SHA-256 should be:</strong> ${r.real_hash}`, 80);
         } else {
-            addClientLine(`<span class="term-purple">[HASH] SHA-256: </span><span class="term-dim">${hash.substring(0, 30)}...</span>`);
-            addVizStep('🧬', 'purple', 'SHA-256 Hash Computed', `<strong>Hash:</strong> ${hash.substring(0, 50)}...`, 100);
+            cLine(C.prompt(C.purple(`[HASH] SHA-256: ${r.real_hash.substring(0, 30)}...`)));
+            viz('🧬', 'purple', 'Real SHA-256 Hash Computed (security.py)',
+                `<code>hashlib.sha256("${r.message}").hexdigest()</code><br><strong>Full Hash:</strong> ${r.real_hash}`, 80);
         }
+        await sleep(350);
 
-        await sleep(400);
-        addClientLine(`<span class="term-accent">[COMBINED] </span><span class="term-dim">${combined.substring(0, 50)}...</span>`);
-        addVizStep('📎', 'cyan', 'Message + Hash Combined', `<strong>Combined:</strong> ${combined.substring(0, 60)}...`, 200);
+        cLine(C.prompt(C.accent(`[COMBINED] ${r.combined.substring(0, 60)}...`)));
+        viz('📎', 'cyan', 'Message + Hash Combined',
+            `Format: <code>message||hash</code><br><strong>Combined:</strong> ${r.combined.substring(0, 90)}...`, 160);
+        await sleep(350);
 
-        await sleep(400);
-        addClientLine(`<span class="term-accent">[ENCRYPTED] </span><span class="term-dim">${encrypted.substring(0, 40)}...</span>`);
-        addVizStep('🔒', 'blue', 'Fernet Encryption Applied', `<strong>Ciphertext:</strong> ${encrypted.substring(0, 60)}...`, 300);
-
-        // Transmit
+        cLine(C.prompt(C.accent(`[ENCRYPTED] ${r.encrypted.substring(0, 50)}...`)));
+        viz('🔒', 'blue', 'Real Fernet Encryption Applied (encryption.py)',
+            `<code>Fernet.encrypt(combined)</code><br><strong>Ciphertext:</strong> ${r.encrypted.substring(0, 90)}...`, 240);
         await sleep(300);
+
+        // Network transit
         animatePacket('down');
-        interceptedBody.textContent = encrypted;
-        addClientLine(`<span class="term-info">[SEND] → Transmitting over network...</span>`);
-        addVizStep('📡', 'orange', 'Data Transmitted Over Network', `Encrypted payload sent via TCP socket. An interceptor would only see: <strong>${encrypted.substring(0, 40)}...</strong>`, 400);
+        interceptedBody.textContent = r.encrypted;
+        cLine(C.prompt(C.info('[SEND] → Transmitting encrypted payload over network...')));
+        viz('📡', 'orange', 'Ciphertext Transmitted Over Network',
+            `An attacker sniffing the network sees only:<br><strong>${r.encrypted.substring(0, 70)}...</strong><br>Cannot decrypt without the Fernet key.`, 320);
+        await sleep(700);
 
-        await sleep(800);
+        // Server side output
+        sLine('');
+        sLine(C.info('[RECV] Encrypted data received'));
+        sLine(C.dim(`[INTERCEPTED] ${r.encrypted.substring(0, 50)}...`));
+        await sleep(350);
 
-        // Server side
-        addServerLine(`<span class="term-info">[RECV] Encrypted data received</span>`);
-        addServerLine(`<span class="term-dim">[INTERCEPTED]: ${encrypted.substring(0, 50)}...</span>`);
+        sLine(C.accent(`[DECRYPT] Fernet.decrypt() → ${r.decrypted.substring(0, 55)}...`));
+        viz('🔓', 'purple', 'Server Decrypts Data (encryption.py)',
+            `<code>Fernet.decrypt(data)</code><br><strong>Result:</strong> ${r.decrypted.substring(0, 90)}...`, 400);
+        await sleep(350);
 
+        sLine(C.accent(`[SPLIT] msg="${r.dec_message}" | hash="${r.received_hash.substring(0, 20)}..."`));
+        await sleep(350);
+
+        sLine(C.purple(`[VERIFY] Recalculated: ${r.calculated_hash.substring(0, 28)}...`));
+        sLine(C.purple(`[VERIFY] Received:     ${r.received_hash.substring(0, 28)}...`));
         await sleep(400);
-        addServerLine(`<span class="term-accent">[DECRYPT] ${combined.substring(0, 50)}...</span>`);
-        addVizStep('🔓', 'purple', 'Server Decrypts Data', `<strong>Decrypted:</strong> ${combined.substring(0, 60)}...`, 500);
 
-        await sleep(400);
-        addServerLine(`<span class="term-accent">[SPLIT] message = "${message}" | hash = "${hash.substring(0, 20)}..."</span>`);
-
-        // Integrity check
-        await sleep(400);
-        const serverCalcHash = realHash;
-        addServerLine(`<span class="term-purple">[VERIFY] Recalculated SHA-256: ${serverCalcHash.substring(0, 20)}...</span>`);
-        addServerLine(`<span class="term-purple">[VERIFY] Received hash:       ${hash.substring(0, 20)}...</span>`);
-
-        await sleep(400);
-        if (!tampered) {
-            addServerLine(`<span class="term-success">[VALID] ✅ Integrity verified! Message from admin: "${message}"</span>`);
-            addServerLine(`<span class="term-dim">[LOG] Message logged to log.txt</span>`);
-            addVizStep('✅', 'green', 'Integrity Verified — Message Valid', `Recalculated hash <strong>matches</strong> received hash.<br>Message accepted and logged: <strong>"${message}"</strong>`, 600);
+        if (r.verified) {
+            sLine(C.success(`[VALID] ✅ verify_hash() = True — Message accepted: "${r.dec_message}"`));
+            sLine(C.dim('[LOG] Message written to log.txt'));
+            viz('✅', 'green', 'Integrity Verification PASSED (security.py)',
+                `<code>verify_hash("${r.dec_message}", hash)</code> returned <strong>True</strong><br><strong>Calculated:</strong> ${r.calculated_hash}<br><strong>Received:</strong>  ${r.received_hash}<br>Message logged to <strong>log.txt</strong>`, 480);
+            sep(clientTerminal);
+            cLine(C.success(`✅ Message delivered & verified: "${r.dec_message}"`));
         } else {
-            addServerLine(`<span class="term-error">[WARNING] ❌ DATA TAMPERED! Hash mismatch detected!</span>`);
-            addServerLine(`<span class="term-error">[WARNING] Expected: ${serverCalcHash.substring(0, 30)}...</span>`);
-            addServerLine(`<span class="term-error">[WARNING] Received: ${hash.substring(0, 30)}...</span>`);
-            addVizStep('❌', 'red', 'INTEGRITY FAILURE — Tampered Data Detected!', `Recalculated hash <strong>DOES NOT match</strong> received hash!<br><strong>Expected:</strong> ${serverCalcHash.substring(0, 40)}...<br><strong>Received:</strong> ${hash.substring(0, 40)}...<br>Message REJECTED!`, 600);
+            sLine(C.error('[WARNING] ❌ verify_hash() = False — DATA TAMPERED!'));
+            sLine(C.error(`[WARNING] Expected: ${r.calculated_hash.substring(0, 32)}...`));
+            sLine(C.error(`[WARNING] Received: ${r.received_hash.substring(0, 32)}...`));
+            viz('❌', 'red', 'Integrity Verification FAILED (security.py)',
+                `<code>verify_hash("${r.dec_message}", hash)</code> returned <strong>False</strong><br><strong>Expected hash:</strong> ${r.calculated_hash}<br><strong>Received hash:</strong> ${r.received_hash}<br>Message <strong>REJECTED</strong> — tampering detected!`, 480);
+            sep(clientTerminal);
+            cLine(C.error(`❌ TAMPER DETECTED! Message "${r.dec_message}" was rejected by server.`));
         }
-
-        btnSend.disabled = false;
-        btnTamper.disabled = false;
+        cLine('');
     }
 
-    btnSend.addEventListener('click', () => sendMessage(false));
-    btnTamper.addEventListener('click', () => sendMessage(true));
+    // ── Run a command string ───────────────────────────────────
+    async function runCommand(raw) {
+        const trimmed = raw.trim();
+        if (!trimmed) return;
 
-    // --- RESET ---
-    btnReset.addEventListener('click', () => {
-        clientTerminal.innerHTML = '<div class="term-line"><span class="term-prompt">$</span> Waiting to connect...</div>';
-        serverTerminal.innerHTML = '<div class="term-line"><span class="term-prompt">$</span> VPN Server running on 127.0.0.1:5000</div><div class="term-line"><span class="term-prompt">$</span> Waiting for connections...</div>';
+        // Add to history
+        cmdHistory.unshift(trimmed);
+        if (cmdHistory.length > 50) cmdHistory.pop();
+        historyIndex = -1;
 
-        clientStatus.textContent = 'Disconnected';
-        clientStatus.classList.remove('connected');
-        serverStatus.textContent = 'Listening';
-        serverStatus.classList.remove('connected');
+        // Echo command in terminal
+        cLine(C.echo(trimmed), 'term-cmd-echo');
 
-        authForm.classList.remove('dp-hidden');
-        msgForm.classList.add('dp-hidden');
+        const parts = trimmed.split(/\s+/);
+        const cmd   = parts[0].toLowerCase();
+        const args  = parts.slice(1);
 
-        interceptedBody.textContent = 'No data in transit';
-        networkPacket.className = 'dn-packet';
+        if (busy) {
+            cLine(C.dim('  (busy, please wait...)'));
+            return;
+        }
+        busy = true;
+        termInput.disabled = true;
+        termEnterBtn.disabled = true;
 
-        clearViz();
-        vizSteps.innerHTML = '<div class="viz-placeholder">Run the demo above to see the step-by-step encryption, hashing, and verification process visualized here.</div>';
+        try {
+            if (COMMANDS[cmd]) {
+                await COMMANDS[cmd](args);
+            } else {
+                cLine(C.error(`  Command not found: "${cmd}". Type help for commands.`));
+            }
+        } catch (e) {
+            cLine(C.error(`  Unexpected error: ${e.message}`));
+        } finally {
+            busy = false;
+            termInput.disabled = false;
+            termEnterBtn.disabled = false;
+            termInput.focus();
+        }
+    }
 
-        isConnected = false;
-        currentKey = '';
-        btnConnect.disabled = false;
-
-        document.getElementById('demoUsername').value = 'admin';
-        document.getElementById('demoPassword').value = '1234';
-        document.getElementById('demoMessage').value = 'Hello from VPN!';
+    // ── Keyboard input handling ────────────────────────────────
+    termInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            const val = termInput.value;
+            termInput.value = '';
+            await runCommand(val);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (historyIndex < cmdHistory.length - 1) {
+                historyIndex++;
+                termInput.value = cmdHistory[historyIndex];
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (historyIndex > 0) {
+                historyIndex--;
+                termInput.value = cmdHistory[historyIndex];
+            } else {
+                historyIndex = -1;
+                termInput.value = '';
+            }
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            const partial = termInput.value.toLowerCase().trim();
+            const match = Object.keys(COMMANDS).find(c => c.startsWith(partial));
+            if (match) termInput.value = match + ' ';
+        }
     });
+
+    termEnterBtn.addEventListener('click', async () => {
+        const val = termInput.value;
+        termInput.value = '';
+        await runCommand(val);
+    });
+
+    // ── Wire up cmd-run-btn and cmd-chip buttons ───────────────
+    document.querySelectorAll('.cmd-run-btn, .cmd-chip').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const cmd = btn.dataset.cmd;
+            if (!cmd) return;
+            termInput.value = '';
+            // Highlight the active step card
+            document.querySelectorAll('.cmd-step').forEach(s => s.classList.remove('active-step'));
+            const parentStep = btn.closest('.cmd-step');
+            if (parentStep) parentStep.classList.add('active-step');
+            // Scroll terminal into view
+            document.getElementById('demoClient').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            await runCommand(cmd);
+        });
+    });
+
+    // ── Auto-focus terminal input on click ────────────────────
+    document.getElementById('demoClient').addEventListener('click', () => termInput.focus());
+
+    // ── Show "hint" on first load ─────────────────────────────
+    setTimeout(() => {
+        cLine('');
+        cLine(C.dim('  Tip: Use ↑ ↓ arrows for command history, Tab to autocomplete'));
+        cLine('');
+    }, 800);
 
 })();
