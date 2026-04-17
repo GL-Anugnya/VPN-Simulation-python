@@ -461,43 +461,24 @@ Thread N:    handle_client(client_N)  ← runs independently</code></pre>
             <div class="demo-panel demo-client" id="demoClient">
                 <div class="dp-header">
                     <div class="dp-dot-group"><span class="dp-dot red"></span><span class="dp-dot yellow"></span><span class="dp-dot green"></span></div>
-                    <span class="dp-title">💻 Client Terminal</span>
+                    <span class="dp-title">💻 client.py — Interactive Terminal</span>
                     <span class="dp-status" id="clientStatus">Disconnected</span>
                 </div>
                 <div class="dp-body">
                     <div class="dp-terminal" id="clientTerminal">
-                        <div class="term-line"><span class="term-prompt">$</span> Waiting to connect...</div>
+                        <div class="term-line term-banner">╔══════════════════════════════════════╗</div>
+                        <div class="term-line term-banner">║   Secure VPN Client  •  Python 3     ║</div>
+                        <div class="term-line term-banner">╚══════════════════════════════════════╝</div>
+                        <div class="term-line"><span class="term-dim">Type <span class="term-accent">help</span> for available commands</span></div>
+                        <div class="term-line"></div>
                     </div>
-
-                    <!-- Auth Form -->
-                    <div class="dp-form" id="authForm">
-                        <div class="dp-input-group">
-                            <label for="demoUsername">Username</label>
-                            <input type="text" id="demoUsername" value="admin" placeholder="Enter username">
-                        </div>
-                        <div class="dp-input-group">
-                            <label for="demoPassword">Password</label>
-                            <input type="password" id="demoPassword" value="1234" placeholder="Enter password">
-                        </div>
-                        <button class="btn btn-primary btn-full" id="btnConnect">
-                            <span class="btn-icon">🔌</span> Connect &amp; Authenticate
-                        </button>
-                    </div>
-
-                    <!-- Message Form (hidden initially) -->
-                    <div class="dp-form dp-hidden" id="msgForm">
-                        <div class="dp-input-group">
-                            <label for="demoMessage">Message</label>
-                            <input type="text" id="demoMessage" placeholder="Type a message to send..." value="Hello from VPN!">
-                        </div>
-                        <div class="dp-btn-row">
-                            <button class="btn btn-primary btn-flex" id="btnSend">
-                                <span class="btn-icon">📤</span> Send Secure
-                            </button>
-                            <button class="btn btn-danger btn-flex" id="btnTamper">
-                                <span class="btn-icon">💀</span> Send Tampered
-                            </button>
-                        </div>
+                    <!-- Real terminal input -->
+                    <div class="term-input-row">
+                        <span class="term-input-prompt">vpn-client $</span>
+                        <input type="text" id="termInput" class="term-input"
+                               placeholder="Type a command and press Enter..."
+                               autocomplete="off" spellcheck="false">
+                        <button class="term-enter-btn" id="termEnterBtn" title="Run (Enter)">↵</button>
                     </div>
                 </div>
             </div>
@@ -509,7 +490,7 @@ Thread N:    handle_client(client_N)  ← runs independently</code></pre>
                     <div class="dn-packet" id="networkPacket"></div>
                 </div>
                 <div class="dn-intercepted" id="interceptedData">
-                    <div class="dn-int-header">🕵️ Intercepted Data</div>
+                    <div class="dn-int-header">🕵️ Intercepted</div>
                     <div class="dn-int-body" id="interceptedBody">No data in transit</div>
                 </div>
             </div>
@@ -518,28 +499,137 @@ Thread N:    handle_client(client_N)  ← runs independently</code></pre>
             <div class="demo-panel demo-server" id="demoServer">
                 <div class="dp-header">
                     <div class="dp-dot-group"><span class="dp-dot red"></span><span class="dp-dot yellow"></span><span class="dp-dot green"></span></div>
-                    <span class="dp-title">🖥️ Server Terminal</span>
+                    <span class="dp-title">🖥️ server.py — Auto Response</span>
                     <span class="dp-status" id="serverStatus">Listening</span>
                 </div>
                 <div class="dp-body">
                     <div class="dp-terminal" id="serverTerminal">
-                        <div class="term-line"><span class="term-prompt">$</span> VPN Server running on 127.0.0.1:5000</div>
-                        <div class="term-line"><span class="term-prompt">$</span> Waiting for connections...</div>
+                        <div class="term-line term-banner">╔══════════════════════════════════════╗</div>
+                        <div class="term-line term-banner">║   Secure VPN Server  •  port 5000    ║</div>
+                        <div class="term-line term-banner">╚══════════════════════════════════════╝</div>
+                        <div class="term-line"><span class="term-success">Server listening on 127.0.0.1:5000</span></div>
+                        <div class="term-line"><span class="term-dim">Waiting for connections...</span></div>
+                        <div class="term-line"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Visualization panel showing detailed step breakdown -->
-        <div class="demo-viz" id="demoViz">
-            <h3>🔬 Process Visualization</h3>
-            <div class="viz-steps" id="vizSteps">
-                <div class="viz-placeholder">Run the demo above to see the step-by-step encryption, hashing, and verification process visualized here.</div>
+
+        <!-- ── DEMO SCRIPT GUIDE ── -->
+        <div class="cmd-guide">
+            <div class="cmd-guide-header">
+                <h3>📋 Demo Script</h3>
+                <p>Click any step to instantly run it in the terminal, or type it yourself</p>
+            </div>
+            <div class="cmd-steps">
+
+                <div class="cmd-step" id="step1">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">1</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Establish Encrypted Connection</div>
+                            <div class="cmd-step-desc">Opens TCP socket to server, triggers key exchange — server calls <code>Fernet.generate_key()</code> and sends the real AES key back</div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">connect</code>
+                        <button class="cmd-run-btn" data-cmd="connect">▶ Run</button>
+                    </div>
+                </div>
+
+                <div class="cmd-step" id="step2">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">2</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Authenticate as Admin</div>
+                            <div class="cmd-step-desc">Encrypts <code>admin:1234</code> with Fernet key, sends to server — server decrypts &amp; validates against <code>VALID_USERS</code> in <code>server.py</code></div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">login admin 1234</code>
+                        <button class="cmd-run-btn" data-cmd="login admin 1234">▶ Run</button>
+                    </div>
+                </div>
+
+                <div class="cmd-step" id="step3">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">3</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Send an Encrypted + Hashed Message</div>
+                            <div class="cmd-step-desc">Real <code>hashlib.sha256()</code> hashes the message → combined with <code>||</code> → <code>Fernet.encrypt()</code> → server decrypts, recalculates hash, calls <code>verify_hash()</code></div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">send Hello from VPN!</code>
+                        <button class="cmd-run-btn" data-cmd="send Hello from VPN!">▶ Run</button>
+                    </div>
+                </div>
+
+                <div class="cmd-step" id="step4">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">4</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Simulate a Tampered Message Attack</div>
+                            <div class="cmd-step-desc">Sends a <code>000...000</code> fake hash instead of real SHA-256 — server's <code>verify_hash()</code> returns <strong style="color:#f87171">False</strong>, message is rejected &amp; flagged</div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">tamper This is hacked!</code>
+                        <button class="cmd-run-btn" data-cmd="tamper This is hacked!">▶ Run</button>
+                    </div>
+                </div>
+
+                <div class="cmd-step" id="step5">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">5</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Try Wrong Credentials (Auth Failure)</div>
+                            <div class="cmd-step-desc">Reset and try logging in with invalid credentials. Server sends back encrypted <code>AUTH_FAILED</code> response.</div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">login hacker wrong</code>
+                        <button class="cmd-run-btn" data-cmd="login hacker wrong">▶ Run</button>
+                    </div>
+                </div>
+
+                <div class="cmd-step" id="step6">
+                    <div class="cmd-step-left">
+                        <div class="cmd-step-num">6</div>
+                        <div class="cmd-step-info">
+                            <div class="cmd-step-title">Check Session Status &amp; View Log</div>
+                            <div class="cmd-step-desc">Shows current session info (key, username, connection state) and reads the actual <code>log.txt</code> file written by the server</div>
+                        </div>
+                    </div>
+                    <div class="cmd-step-right">
+                        <code class="cmd-step-code">status</code>
+                        <button class="cmd-run-btn" data-cmd="status">▶ Run</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Quick command chips -->
+            <div class="cmd-chips">
+                <span class="cmd-chip-label">Quick run:</span>
+                <button class="cmd-chip" data-cmd="help">help</button>
+                <button class="cmd-chip" data-cmd="connect">connect</button>
+                <button class="cmd-chip" data-cmd="login admin 1234">login admin 1234</button>
+                <button class="cmd-chip" data-cmd="login user pass">login user pass</button>
+                <button class="cmd-chip" data-cmd="send Network security works!">send Network security works!</button>
+                <button class="cmd-chip" data-cmd="tamper Intercept this">tamper Intercept this</button>
+                <button class="cmd-chip" data-cmd="status">status</button>
+                <button class="cmd-chip" data-cmd="log">log</button>
+                <button class="cmd-chip" data-cmd="clear">clear</button>
+                <button class="cmd-chip danger-chip" data-cmd="disconnect">disconnect</button>
             </div>
         </div>
 
-        <!-- Reset -->
-        <div class="demo-reset">
+        <!-- Visualization panel -->
+        <div class="demo-viz" id="demoViz">
+            <h3>🔬 Process Visualization</h3>
+            <div class="viz-steps" id="vizSteps">
             <button class="btn btn-secondary" id="btnReset">
                 <span class="btn-icon">🔄</span> Reset Demo
             </button>

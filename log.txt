@@ -4,3 +4,9 @@
 ('127.0.0.1', 61169) (admin): Network security 
 ('127.0.0.1', 61169) (admin): hello
 ('127.0.0.1', 65278) (admin): Hello from the VPN simulation!
+(web-demo) (admin): Hello from VPN!
+(web-demo) (admin): Hello from VPN!
+(web-demo) (admin): Hello from VPN!
+(web-demo) (admin): Hello from VPN!
+(web-demo) (admin): Hello from VPN!
+(web-demo) (admin): hello
